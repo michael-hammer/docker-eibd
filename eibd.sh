@@ -12,7 +12,7 @@ export LD_LIBRARY_PATH=/usr/local/lib
 export PATH=/usr/local/bin:$PATH
 export EIBD_BIN=/usr/local/bin/eibd
 #export EIBD_OPTIONS="-D -T -R -S -i -u --eibaddr=1.1.128 tpuarts:/dev/ttyS0"
-export EIBD_OPTIONS="--daemon=/tmp/eibd.log -D -T -R -S -i -u --eibaddr=1.1.128 iptn:10.0.1.6"
+export EIBD_OPTIONS="--daemon=/tmp/eibd.log -D -T -R -S -i -u --eibaddr=$EIBD_eibaddr iptn:$EIBD_iptn"
 export EIBD_USER=eibd
 test -x $EIBD_BIN || exit 0
 umask 022
