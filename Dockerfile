@@ -1,38 +1,29 @@
 FROM debian:jessie
-MAINTAINER Anders Åslund <anders.aslund@teknoir.se>
+MAINTAINER Michael Hammer <mail@michael-hammer.at>
 
 # update apt and install dependencies
 RUN apt-get -qq update
-RUN apt-get install -y python python-dev python-pip python-virtualenv
-RUN apt-get install -y build-essential gcc git rsync cmake make g++ binutils automake flex bison patch wget
+RUN apt-get -y install git-core wget build-essential debhelper cdbs autotools-dev autoconf automake libtool pkg-config base-files debianutils libsystemd-dev libsystemd-daemon-dev base-files
+RUN apt-get -y install libusb-1.0-0-dev dh-systemd init-system-helpers
+Run apt-get clean
 
-ENV KNXDIR /usr
-ENV INSTALLDIR $KNXDIR/local
-ENV SOURCEDIR  $KNXDIR/src
-ENV LD_LIBRARY_PATH $INSTALLDIR/lib
+ENV SOURCE_DIR /usr/local/src
+WORKDIR $SOURCE_DIR
+
+# ENV LD_LIBRARY_PATH $INSTALLDIR/lib
 ENV EIBD_iptn 192.168.250.5
 ENV EIBD_eibaddr 15.15.1
 
-WORKDIR $SOURCEDIR
-
-# build pthsem
-COPY pthsem_2.0.8.tar.gz pthsem_2.0.8.tar.gz
+RUN wget https://www.auto.tuwien.ac.at/~mkoegler/pth/pthsem_2.0.8.tar.gz
 RUN tar -xzf pthsem_2.0.8.tar.gz
-RUN cd pthsem-2.0.8 && ./configure --prefix=$INSTALLDIR/ && make && make test && make install
+RUN cd pthsem-2.0.8 && dpkg-buildpackage -b -uc
+RUN dpkg -i libpthsem*.deb
 
-# build linknx
-COPY linknx-0.0.1.32.tar.gz linknx-0.0.1.32.tar.gz
-RUN tar -xzf linknx-0.0.1.32.tar.gz
-RUN cd linknx-0.0.1.32 && ./configure --without-log4cpp --without-lua --prefix=$INSTALLDIR/ --with-pth=$INSTALLDIR/ && make && make install
+RUN git clone https://github.com/knxd/knxd.git
+RUN cd knxd && dpkg-buildpackage -b -uc
+RUN dpkg -i knxd_*.deb knxd-tools_*.deb
 
-# build eibd
-COPY bcusdk_0.0.5.tar.gz bcusdk_0.0.5.tar.gz
-RUN tar -xzf bcusdk_0.0.5.tar.gz
-RUN cd bcusdk-0.0.5 && ./configure --enable-onlyeibd --enable-eibnetiptunnel --enable-eibnetipserver --enable-ft12 --prefix=$INSTALLDIR/ --with-pth=$INSTALLDIR/ && make && make install
-
-RUN useradd eibd -s /bin/false -U -M
-ADD eibd.sh /etc/init.d/eibd
-RUN chmod +x /etc/init.d/eibd
-RUN update-rc.d eibd defaults 98 02
+RUN apt-get -y purge git-core wget build-essential debhelper cdbs automake autoconf libtool pkg-config
+RUN apt-get -y autoremove
 
 EXPOSE 6720
